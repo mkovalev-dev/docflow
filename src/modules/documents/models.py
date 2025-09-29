@@ -46,6 +46,7 @@ class Document(Base, BasicFieldsMixin):
         nullable=False,
     )
     system_number: Mapped[str] = mapped_column(String(25), nullable=True)
+
     content: Mapped[str] = mapped_column("content", Text())
     paper_count: Mapped[int] = mapped_column("paper_count", Integer(), default=1)
     attachment_description: Mapped[str] = mapped_column(

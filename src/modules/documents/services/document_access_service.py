@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from fastapi import HTTPException, Request
 
@@ -14,16 +14,17 @@ from src.modules.documents.models import DocumentAccess
 
 class DocumentAccessService:
 
-    def __init__(self, user: User, document_id: uuid.UUID, request: Request):
+    def __init__(
+        self,
+        user: User,
+        document_id: uuid.UUID,
+        users_data: dict[str, User],
+        confidentiality_levels: list[DocumentConfidentialTypeEnum],
+    ):
         self.user = user
         self.document_id = document_id
-        self.request = request
-
-    async def get_users_data(self, user_ids: List[uuid.UUID]):
-        user_client = UserClient(
-            session_id=self.request.cookies.get("SESSION"),
-        )
-        return await user_client.get_users(ids=user_ids)
+        self.users_data = users_data
+        self.confidentiality_levels = confidentiality_levels
 
     async def validate_user_role(
         self,
@@ -33,7 +34,7 @@ class DocumentAccessService:
         """
         Проверка, что пользователь обладает хотя бы одним уровнем из confidentiality_levels.
         """
-        user_roles = user.get("roles", [])
+        user_roles = user.roles
         required_levels = [level.value for level in levels]
 
         if not any(role in user_roles for role in required_levels):
@@ -47,21 +48,21 @@ class DocumentAccessService:
 
     async def execute(
         self,
-        user_ids: List[uuid.UUID],
-        confidentiality_levels: list[DocumentConfidentialTypeEnum],
+        user_ids: Optional[List[uuid.UUID]] = None,
     ) -> List[DocumentAccess]:
         accesses: List[DocumentAccess] = []
-        users_data = await self.get_users_data(user_ids)
+        if not user_ids:
+            user_ids = []
 
-        for user_id in user_ids:
-            user = users_data.get(str(user_id), None)
+        for user_id in set(user_ids):
+            user = self.users_data.get(str(user_id), None)
             if user is None:
                 raise HTTPException(
                     status_code=404,
                     detail=f"Пользователь с ID {user_id} не найден.",
                 )
 
-            await self.validate_user_role(user=user, levels=confidentiality_levels)
+            await self.validate_user_role(user=user, levels=self.confidentiality_levels)
 
             accesses.append(
                 DocumentAccess(

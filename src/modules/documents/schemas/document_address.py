@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Optional, List, Tuple
-from pydantic import BaseModel, ConfigDict, model_validator, ValidationInfo
+from pydantic import BaseModel, ConfigDict, model_validator, ValidationInfo, Field
 
 from src.adapters.http.user_client import ExternalUser, Organization, User
 
@@ -11,9 +11,9 @@ class ExternalUserEntry(BaseModel):
 
 
 class AddressGroups(BaseModel):
-    users: List[User] = []
-    external_users: List[ExternalUserEntry] = []
-    organizations: List[Organization] = []
+    users: List[User] = Field(default_factory=list)
+    external_users: List[ExternalUserEntry] = Field(default_factory=list)
+    organizations: List[Organization] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -39,7 +39,7 @@ class AddressGroups(BaseModel):
         orgs_map = ctx.get("organizations", {}) or {}
 
         users_out: list[User] = []
-        external_out: list[ExternalUser] = []
+        external_out: list[ExternalUserEntry] = []
         orgs_out: list[Organization] = []
 
         seen_users: set[str] = set()
@@ -75,7 +75,7 @@ class AddressGroups(BaseModel):
                         orgs_out.append(ob)
 
             # external_users[] — пара (external_user, organization)
-            if xid or (xid is not None and oid is not None):
+            if xid is not None or (xid is not None and oid is not None):
                 key = (_k(xid), _k(oid))
                 if key not in seen_ext:
                     seen_ext.add(key)

@@ -1,7 +1,9 @@
+from typing import List
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Request
 
-from src.adapters.http.user_client import User
+from src.adapters.http.user_client import User, UserClient
 from src.modules.documents.enums import DocumentTypeEnum
 from src.modules.documents.schemas.document_create import DocumentCreateSchema
 from src.modules.documents.services.document_access_service import DocumentAccessService
@@ -33,13 +35,21 @@ class DocumentOrchestrationService:
         self.request = request
         self.user = user
 
+    async def get_users_data(self, user_ids: List[uuid.UUID] | None):
+        if user_ids is None:
+            user_ids = []
+        user_client = UserClient(
+            session_id=self.request.cookies.get("SESSION", ""),
+        )
+        return await user_client.get_users(ids=user_ids)
+
     async def execute(self, data: DocumentCreateSchema):
         document_id = uuid.uuid4()
         document = DocumentCreateService().execute(
             id=document_id,
             document_type=self.document_type,
             user=self.user,
-            data=DocumentCreateData.model(data),
+            data=DocumentCreateData.model_validate(data),
         )
         registration = RegistrationService.initialize_registration_row(
             document_id=document_id,
@@ -61,9 +71,15 @@ class DocumentOrchestrationService:
         ).execute(confidentiality_level=data.confidentiality_level)
 
         #
+        users_data = await self.get_users_data(data.access)
         document_access_client = DocumentAccessService(
-            user=self.user, document_id=document_id, request=self.request
+            user=self.user,
+            document_id=document_id,
+            confidentiality_levels=data.confidentiality_level,
+            users_data=users_data,
         )
-        document_access = await document_access_client.execute(
-            user_ids=data.access, confidentiality_levels=data.confidentiality_level
-        )
+
+        document_access = await document_access_client.execute(user_ids=data.access)
+
+        # TODO: загрузка файлов
+        # TODO: связи с документами

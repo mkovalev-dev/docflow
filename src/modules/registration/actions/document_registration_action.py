@@ -75,7 +75,7 @@ class DocumentRegistrationAction(BaseDocumentAction):
             DocumentRegistration.document_id == self.document_id
         )
         result = await self.db.execute(stmt)
-        registration_instance: DocumentRegistration = result.scalar_one_or_none()
+        registration_instance: DocumentRegistration | None = result.scalar_one_or_none()
         if registration_instance is None:
             registration_instance = DocumentRegistration(
                 document_id=self.document_id,

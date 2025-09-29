@@ -1,6 +1,6 @@
 from typing import Optional, Annotated
 
-from pydantic import BaseModel, PlainSerializer
+from pydantic import BaseModel, PlainSerializer, model_validator
 
 from src.modules.documents.enums import DocumentPartyTypeEnum, DocumentTypeEnum
 
@@ -14,6 +14,13 @@ class DocumentAddressCreateModel(BaseModel):
     is_responsible: bool = False
     comment: Optional[str] = None
     party_type: DocumentPartyTypeEnum
+
+    @model_validator(mode="after")
+    def check_exactly_one_identity(self):
+        ids = [self.user_id, self.external_user_id, self.organization_id]
+        if not any(ids):
+            raise ValueError("Нужно указать хотя бы один идентификатор адресата.")
+        return self
 
 DocTypeLabel = Annotated[
     DocumentTypeEnum,

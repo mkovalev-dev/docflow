@@ -25,10 +25,13 @@ class DocumentFileItem(BaseModel):
     type: str
     is_main: bool
 
+    @classmethod
     @model_validator(mode="before")
-    def set_type_from_extension(self):
-        self.type = self.extension
-        return self
+    def set_type_from_extension(cls, v):
+        if isinstance(v, dict):
+            v = {**v}
+            v["type"] = v.get("extension")
+        return v
 
 
 class DocumentListItem(BaseModel):
@@ -43,10 +46,10 @@ class DocumentListItem(BaseModel):
     paper_count: int
     attachment_count: Optional[str] = None
     deadline: Optional[datetime] = None
-    actions: Optional[dict[str, bool]] = None
+    actions: dict[str, bool] | None = None
     confidentiality_level: List[DocumentConfidentialTypeEnum]
     main_file: Optional[DocumentFileItem] = None
-    file_list: Optional[List[DocumentFileItem]] = []
+    file_list: List[DocumentFileItem] = Field(default_factory=list)
     status: Optional[StatusEnum] = None
 
     model_config = ConfigDict(from_attributes=True)
