@@ -9,16 +9,13 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from src.core.settings import get_settings
 from src.core.db import Base
 
-from src.modules.registration.models import RegistrationNumber
-from src.modules.documents.models import (
+from src.modules.correspondence.domain.models import (
     Document,
+    DocumentConfidential,
     DocumentRegistration,
     DocumentAddress,
-    DocumentConfidential,
-    DocumentAccess,
 )
 
-from src.modules.workflow.models import Workflow, WorkflowStep, WorkflowParticipant
 
 # Alembic Config object, предоставляет доступ к данным из alembic.ini
 config = context.config

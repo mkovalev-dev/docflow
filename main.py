@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from src.core.events import lifespan
 from src.core.settings import get_settings
 from src.middlewares.auth_header_context import AuthHeaderContextMiddleware
-from src.modules.documents.routers import router as documents_router
+from src.modules.correspondence.api.router import router as documents_router
 
 app = FastAPI(
     lifespan=lifespan,

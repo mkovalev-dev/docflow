@@ -75,7 +75,7 @@ class UserClient:
         data = {}
         response = await self.request().post(
             url=f"{self.settings.services.USERS_SERVICE_URL}/event-users-info",
-            json={"ids": set(ids)},
+            json={"ids": list(set(ids))},
         )
         if response.status_code != 200:
             raise HTTPException(status_code=response.status_code, detail=response.text)
